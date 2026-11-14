@@ -12,6 +12,10 @@ namespace NexoraRent.Infrastructure.Cars;
 /// </summary>
 public sealed class CarRepository(MySqlConnectionFactory connections) : ICarRepository
 {
+    // A plain array, so Dapper expands "IN @statuses" into IN ('pending', ...).
+    // An IReadOnlyList<string> would go through JsonStringListHandler and be sent as one JSON string.
+    private static readonly string[] OccupyingStatuses = [.. ReservationStatuses.Occupying];
+
     private const string PrimaryImage =
         "(SELECT url FROM car_images WHERE car_id = c.id ORDER BY is_primary DESC, sort_order ASC LIMIT 1)";
 
@@ -166,7 +170,7 @@ public sealed class CarRepository(MySqlConnectionFactory connections) : ICarRepo
         await using var connection = await connections.OpenAsync(cancellationToken);
         await using var results = await connection.QueryMultipleAsync(new CommandDefinition(
             sql,
-            new { carId, statuses = ReservationStatuses.Occupying, pickup = period.Pickup, dropoff = period.Dropoff },
+            new { carId, statuses = OccupyingStatuses, pickup = period.Pickup, dropoff = period.Dropoff },
             cancellationToken: cancellationToken));
 
         var isAvailable = await results.ReadSingleOrDefaultAsync<bool?>();
@@ -190,7 +194,7 @@ public sealed class CarRepository(MySqlConnectionFactory connections) : ICarRepo
         await using var connection = await connections.OpenAsync(cancellationToken);
         var rows = await connection.QueryAsync<BlockedPeriod>(new CommandDefinition(
             sql,
-            new { carId, statuses = ReservationStatuses.Occupying },
+            new { carId, statuses = OccupyingStatuses },
             cancellationToken: cancellationToken));
         return rows.AsList();
     }
