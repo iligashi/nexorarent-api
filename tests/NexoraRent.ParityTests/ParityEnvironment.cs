@@ -16,6 +16,13 @@ namespace NexoraRent.ParityTests;
 /// </summary>
 internal static class ParityEnvironment
 {
+    /// <summary>
+    /// One xUnit collection for every class that uses the parity database. Collections run in
+    /// parallel, and the write tests change the database for a moment, so a read in another
+    /// collection could see an unfinished booking on one API and not the other.
+    /// </summary>
+    public const string SharedDatabase = "Parity database";
+
     public static readonly Uri? ExpressUrl = Url("PARITY_EXPRESS_URL");
     public static readonly Uri? DotnetUrl = Url("PARITY_DOTNET_URL");
     public static readonly string? JwtSecret = Environment.GetEnvironmentVariable("PARITY_JWT_SECRET");

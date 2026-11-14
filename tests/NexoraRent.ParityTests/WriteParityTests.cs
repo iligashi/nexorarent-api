@@ -14,6 +14,7 @@ namespace NexoraRent.ParityTests;
 /// class sends 18. Restart Express before running it again within that window.
 /// </para>
 /// </summary>
+[Collection(ParityEnvironment.SharedDatabase)]
 public class WriteParityTests
 {
     private const string CustomerId = "dddddddd-0000-4000-8000-000000000001";

@@ -11,6 +11,7 @@ namespace NexoraRent.ParityTests;
 /// skipped. CI starts both APIs on a seeded MySQL and sets the variables.
 /// </para>
 /// </summary>
+[Collection(ParityEnvironment.SharedDatabase)]
 public class ParityTests
 {
     private static Uri? ExpressUrl => ParityEnvironment.ExpressUrl;
