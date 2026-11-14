@@ -41,6 +41,17 @@ public class JsonParityTests
     }
 
     [Fact]
+    public void Ignored_keys_must_exist_but_may_differ()
+    {
+        var ignored = new HashSet<string> { "id" };
+        var express = Parse("""{"reservation":{"id":"a","total":"10.00"}}""");
+
+        Assert.Empty(JsonParity.Compare(express, Parse("""{"reservation":{"id":"b","total":10}}"""), ignoredKeys: ignored));
+        Assert.NotEmpty(JsonParity.Compare(express, Parse("""{"reservation":{"total":10}}"""), ignoredKeys: ignored));
+        Assert.NotEmpty(JsonParity.Compare(express, Parse("""{"reservation":{"id":"b","total":11}}"""), ignoredKeys: ignored));
+    }
+
+    [Fact]
     public void Array_order_matters_unless_ignored()
     {
         var express = Parse("""[{"id":"a"},{"id":"b"}]""");

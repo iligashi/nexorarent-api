@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
+using NexoraRent.Core.Validation;
 
 namespace NexoraRent.Api.Http;
 
@@ -30,18 +31,28 @@ internal static class ErrorHandling
     /// </summary>
     public static IResult Error(int statusCode, string message) => new ErrorResult(statusCode, message);
 
-    private sealed class ErrorResult(int statusCode, string message) : IResult
+    /// <summary>The 400 body of the Express <c>validate</c> middleware: <c>{ error, errors: [{ field, message }] }</c>.</summary>
+    public static IResult ValidationFailed(IReadOnlyList<ValidationIssue> issues) =>
+        new ErrorResult(StatusCodes.Status400BadRequest, "Validation failed", issues);
+
+    private sealed class ErrorResult(int statusCode, string message, IReadOnlyList<ValidationIssue>? issues = null) : IResult
     {
         public Task ExecuteAsync(HttpContext httpContext)
         {
             httpContext.Response.StatusCode = statusCode;
             // A dictionary keeps the camelCase "requestId" key the client expects;
             // the snake_case naming policy only renames object properties.
-            return httpContext.Response.WriteAsJsonAsync(new Dictionary<string, string>
+            var body = new Dictionary<string, object>
             {
                 ["error"] = message,
                 ["requestId"] = httpContext.TraceIdentifier,
-            });
+            };
+            if (issues is not null)
+            {
+                body["errors"] = issues;
+            }
+
+            return httpContext.Response.WriteAsJsonAsync<object>(body);
         }
     }
 }

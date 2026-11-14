@@ -56,6 +56,8 @@ public sealed class ApiFixture : IAsyncLifetime
             builder.UseEnvironment("Testing");
             builder.UseSetting("Database:ConnectionString", connectionString);
             builder.UseSetting("JWT_SECRET", JwtSecret);
+            // All test clients share one rate-limit partition, so lift the 20-per-15-minutes booking limit.
+            builder.UseSetting("RateLimits:ReservationsPerWindow", "100000");
         });
     }
 

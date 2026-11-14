@@ -1,13 +1,18 @@
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using NexoraRent.Core.Blog;
 using NexoraRent.Core.Cars;
 using NexoraRent.Core.Catalog;
 using NexoraRent.Infrastructure.Blog;
 using NexoraRent.Infrastructure.Catalog;
+using NexoraRent.Core.Reservations;
+using NexoraRent.Core.Reviews;
 using NexoraRent.Core.Users;
 using NexoraRent.Infrastructure.Cars;
 using NexoraRent.Infrastructure.Data;
+using NexoraRent.Infrastructure.Reservations;
+using NexoraRent.Infrastructure.Reviews;
 using NexoraRent.Infrastructure.Users;
 
 namespace NexoraRent.Infrastructure;
@@ -30,6 +35,9 @@ public static class DependencyInjection
         services.AddScoped<ICatalogRepository, CatalogRepository>();
         services.AddScoped<IBlogRepository, BlogRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IReservationRepository, ReservationRepository>();
+        services.AddScoped<IReviewRepository, ReviewRepository>();
+        services.TryAddSingleton(TimeProvider.System);
         return services;
     }
 }

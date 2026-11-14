@@ -62,6 +62,8 @@ jobs:
       TZ: UTC
       PARITY_EXPRESS_URL: http://127.0.0.1:4000
       PARITY_DOTNET_URL: http://127.0.0.1:5080
+      # The write parity tests reset rows between the Express and the .NET call.
+      PARITY_DB: Server=127.0.0.1;Port=3306;User ID=root;Password=parity;Database=drenas_rentacar
 
     steps:
       - uses: actions/checkout@v4
@@ -97,9 +99,21 @@ jobs:
       - name: Build
         run: dotnet build NexoraRent.slnx -c Release
 
+      - name: Generate shared secrets
+        run: |
+          jwt="$(openssl rand -hex 32)"
+          refresh="$(openssl rand -hex 32)"
+          echo "::add-mask::$jwt"
+          echo "::add-mask::$refresh"
+          {
+            echo "JWT_SECRET=$jwt"
+            echo "JWT_REFRESH_SECRET=$refresh"
+            # The write parity tests sign customer tokens with the same secret.
+            echo "PARITY_JWT_SECRET=$jwt"
+          } >> "$GITHUB_ENV"
+
       - name: Start both APIs
         run: |
-          export JWT_SECRET="$(openssl rand -hex 32)" JWT_REFRESH_SECRET="$(openssl rand -hex 32)"
           (cd express/server && PORT=4000 nohup node src/index.js > "$RUNNER_TEMP/express.log" 2>&1 &)
           nohup dotnet src/NexoraRent.Api/bin/Release/net10.0/NexoraRent.Api.dll --urls http://127.0.0.1:5080 > "$RUNNER_TEMP/dotnet.log" 2>&1 &
           for url in "$PARITY_EXPRESS_URL/api/health" "$PARITY_DOTNET_URL/api/health"; do

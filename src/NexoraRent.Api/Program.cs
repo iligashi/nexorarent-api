@@ -25,7 +25,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddInfrastructure();
 builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddClientCors(builder.Configuration, builder.Environment);
-builder.Services.AddApiRateLimiting();
+builder.Services.AddApiRateLimiting(builder.Configuration);
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
@@ -49,6 +49,8 @@ var v1 = app.MapGroup("/api/v1");
 v1.MapCarEndpoints();
 v1.MapCatalogEndpoints();
 v1.MapBlogEndpoints();
+v1.MapReservationEndpoints();
+v1.MapReviewEndpoints();
 v1.MapAuthEndpoints();
 
 app.MapFallback(() => ErrorHandling.Error(StatusCodes.Status404NotFound, "Route not found"));
