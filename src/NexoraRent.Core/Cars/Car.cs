@@ -5,6 +5,10 @@ namespace NexoraRent.Core.Cars;
 /// <summary>
 /// A car as returned by the public cars endpoints. Property names are written
 /// as snake_case JSON so the response matches the existing Next.js client.
+/// <para>
+/// The VIN and license plate are left out on purpose: they identify a physical
+/// vehicle, and only admin endpoints may return them.
+/// </para>
 /// </summary>
 public sealed record Car
 {
@@ -21,8 +25,6 @@ public sealed record Car
     public int? Horsepower { get; init; }
     public int? EngineCc { get; init; }
     public string? Color { get; init; }
-    public string? LicensePlate { get; init; }
-    public string? Vin { get; init; }
     public int? Mileage { get; init; }
     public decimal PricePerDay { get; init; }
     public decimal? PricePerWeek { get; init; }

@@ -10,11 +10,15 @@ namespace NexoraRent.ParityTests;
 /// Only the documented, intentional differences are accepted:
 /// DECIMAL values as strings vs numbers ("25.00" vs 25.00), booleans as 0/1 vs
 /// true/false, and timestamps written with or without milliseconds.
+/// The <c>requestId</c> key is skipped: it is a random correlation id that each
+/// server generates, and the client never reads it.
 /// Anything else, including missing or extra keys, is reported.
 /// </para>
 /// </summary>
 public static class JsonParity
 {
+    private const string RequestIdKey = "requestId";
+
     public static IReadOnlyList<string> Compare(JsonElement express, JsonElement dotnet, bool ignoreArrayOrder = false)
     {
         var differences = new List<string>();
@@ -26,8 +30,8 @@ public static class JsonParity
     {
         if (express.ValueKind == JsonValueKind.Object && dotnet.ValueKind == JsonValueKind.Object)
         {
-            var expressKeys = express.EnumerateObject().Select(p => p.Name).ToHashSet(StringComparer.Ordinal);
-            var dotnetKeys = dotnet.EnumerateObject().Select(p => p.Name).ToHashSet(StringComparer.Ordinal);
+            var expressKeys = ComparedKeys(express);
+            var dotnetKeys = ComparedKeys(dotnet);
 
             foreach (var key in expressKeys.Except(dotnetKeys))
             {
@@ -76,6 +80,9 @@ public static class JsonParity
             differences.Add($"{path}: Express {express.GetRawText()} vs .NET {dotnet.GetRawText()}");
         }
     }
+
+    private static HashSet<string> ComparedKeys(JsonElement value) =>
+        value.EnumerateObject().Select(p => p.Name).Where(name => name != RequestIdKey).ToHashSet(StringComparer.Ordinal);
 
     private static bool ScalarsMatch(JsonElement express, JsonElement dotnet)
     {

@@ -51,7 +51,7 @@ v1.MapCatalogEndpoints();
 v1.MapBlogEndpoints();
 v1.MapAuthEndpoints();
 
-app.MapFallback(() => Results.Json(new { error = "Route not found" }, statusCode: StatusCodes.Status404NotFound));
+app.MapFallback(() => ErrorHandling.Error(StatusCodes.Status404NotFound, "Route not found"));
 
 await app.RunAsync();
 

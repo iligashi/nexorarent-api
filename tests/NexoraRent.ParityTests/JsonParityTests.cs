@@ -31,6 +31,16 @@ public class JsonParityTests
     }
 
     [Fact]
+    public void Ignores_request_ids_but_still_compares_the_error()
+    {
+        var express = Parse("""{"error":"Car not found","requestId":"a"}""");
+
+        Assert.Empty(JsonParity.Compare(express, Parse("""{"error":"Car not found"}""")));
+        Assert.Empty(JsonParity.Compare(express, Parse("""{"error":"Car not found","requestId":"b"}""")));
+        Assert.NotEmpty(JsonParity.Compare(express, Parse("""{"error":"Not found","requestId":"a"}""")));
+    }
+
+    [Fact]
     public void Array_order_matters_unless_ignored()
     {
         var express = Parse("""[{"id":"a"},{"id":"b"}]""");

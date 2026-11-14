@@ -39,6 +39,29 @@ public class CarsApiTests(ApiFixture api)
         Assert.EndsWith("Z", golf.GetProperty("created_at").GetString(), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("/api/v1/cars")]
+    [InlineData("/api/v1/cars/featured")]
+    public async Task Lists_never_expose_vin_or_license_plate(string path)
+    {
+        var body = await GetJsonAsync(path);
+
+        foreach (var car in body.GetProperty("cars").EnumerateArray())
+        {
+            Assert.False(car.TryGetProperty("vin", out _));
+            Assert.False(car.TryGetProperty("license_plate", out _));
+        }
+    }
+
+    [Fact]
+    public async Task Detail_never_exposes_vin_or_license_plate()
+    {
+        var car = (await GetJsonAsync("/api/v1/cars/volkswagen-golf-8")).GetProperty("car");
+
+        Assert.False(car.TryGetProperty("vin", out _));
+        Assert.False(car.TryGetProperty("license_plate", out _));
+    }
+
     [Fact]
     public async Task List_filters_and_sorts()
     {
@@ -87,7 +110,9 @@ public class CarsApiTests(ApiFixture api)
         var response = await Client.GetAsync(new Uri("/api/v1/cars/does-not-exist", UriKind.Relative), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal("Car not found", (await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken)).GetProperty("error").GetString());
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        Assert.Equal("Car not found", body.GetProperty("error").GetString());
+        Assert.Equal(response.Headers.GetValues("X-Request-Id").Single(), body.GetProperty("requestId").GetString());
     }
 
     [Theory]
