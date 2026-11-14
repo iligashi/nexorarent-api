@@ -10,7 +10,8 @@ replace the existing Express API **one route group at a time, without downtime**
 share the same MySQL database and the same JWT secret, and the Next.js frontend does not change:
 Next.js rewrites decide which backend serves each route.
 
-> **Status:** early. The public cars endpoints and `GET /auth/me` are ported and tested.
+> **Status:** early. The public read endpoints (cars, locations, extras, blog) and `GET /auth/me`
+> are ported and tested against the Express API.
 > See the [migration plan](docs/migration-plan.md) for what comes next.
 
 ## What's here
@@ -21,6 +22,10 @@ Next.js rewrites decide which backend serves each route.
 | `GET /api/v1/cars/featured` | Up to 6 featured cars |
 | `GET /api/v1/cars/{slug}` | Car details with image gallery and latest approved reviews |
 | `GET /api/v1/cars/{id}/availability` | Whether a car is free for a period, plus its booked periods |
+| `GET /api/v1/locations` | Active pickup and dropoff locations |
+| `GET /api/v1/extras` | Active rental extras with daily price |
+| `GET /api/v1/blog` | Published posts, newest first, paged |
+| `GET /api/v1/blog/{slug}` | One published post with its author name |
 | `GET /api/v1/auth/me` | Current user, from an access token issued by the Express API |
 | `GET /api/health` | Database health, same shape as the Express health check |
 
@@ -47,6 +52,7 @@ src/
 tests/
   NexoraRent.UnitTests/         Domain rules
   NexoraRent.IntegrationTests/  Full HTTP tests against MySQL 8.4 in Docker (Testcontainers)
+  NexoraRent.ParityTests/       Same requests to Express and .NET, responses must match
 ```
 
 Design decisions are recorded in [`docs/adr`](docs/adr), starting with
@@ -60,6 +66,8 @@ Design decisions are recorded in [`docs/adr`](docs/adr), starting with
   `CLIENT_URL`, ...), so one Railway config serves both services.
 - **Contract tests:** integration tests start a real MySQL container, load the schema and seed
   data, and assert on the exact JSON the frontend reads.
+- **Parity tests:** CI starts the real Express API next to this one on a seeded database and
+  compares every response, so a ported route cannot drift from the original.
 - **Production basics:** request ids in `X-Request-Id`, JSON logs, per-IP rate limiting,
   credentialed CORS allow-list, non-root Docker image, warnings treated as errors.
 
@@ -90,6 +98,9 @@ dotnet test --solution NexoraRent.slnx
 
 Integration tests need Docker. Without it they are skipped locally; CI sets `REQUIRE_DOCKER=true`
 so they always run there.
+
+Parity tests need both APIs running and are skipped otherwise. See
+[Parity tests](docs/migration-plan.md#parity-tests) for how to run them.
 
 ## Connect the frontend
 

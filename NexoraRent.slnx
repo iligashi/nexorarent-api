@@ -6,6 +6,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NexoraRent.IntegrationTests/NexoraRent.IntegrationTests.csproj" />
+    <Project Path="tests/NexoraRent.ParityTests/NexoraRent.ParityTests.csproj" />
     <Project Path="tests/NexoraRent.UnitTests/NexoraRent.UnitTests.csproj" />
   </Folder>
 </Solution>
