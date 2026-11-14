@@ -40,6 +40,9 @@ internal static class ParityEnvironment
 
     public static async Task<MySqlConnection> OpenDatabaseAsync()
     {
+        // Callers may open the database before sending anything, so skip here too.
+        SkipUnlessWritesConfigured();
+
         // Like the API: CHAR(36) ids stay strings, and the test SQL may use several statements.
         var settings = new MySqlConnectionStringBuilder(Database!) { GuidFormat = MySqlGuidFormat.None, AllowUserVariables = true };
         var connection = new MySqlConnection(settings.ConnectionString);
