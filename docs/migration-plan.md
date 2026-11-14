@@ -67,9 +67,8 @@ To run them locally, start both APIs on the same database and set the URLs:
 PARITY_EXPRESS_URL=http://localhost:4000 PARITY_DOTNET_URL=http://localhost:5080   dotnet test --project tests/NexoraRent.ParityTests
 ```
 
-Start Express with `TZ=UTC`. mysql2 converts `DATETIME` values with the Node process time
-zone, so on a machine outside UTC every timestamp differs by the offset. Production runs in
-UTC, where both APIs agree.
+Express reads `DATETIME` values as UTC (mysql2 `timezone: 'Z'`). Versions before that
+used the Node process time zone, so with an older Express start it with `TZ=UTC`.
 
 ## Known differences from Express
 
@@ -80,4 +79,4 @@ UTC, where both APIs agree.
 | `limit` (cars, blog) | Unbounded | Clamped to 1–100 | Prevents very large pages |
 | Search | `%` and `_` act as wildcards | Treated as literal text | Predictable search |
 | 4xx messages in production | Replaced with "Internal server error" by the error handler | Real message | Client can show a useful error |
-| `requestId` in 4xx bodies | Present when the error goes through `next(err)` | Only on 500s; every response has the `X-Request-Id` header | Keeps 4xx bodies minimal |
+| `requestId` in error bodies | Only when the error goes through `next(err)` | On every error body, equal to the `X-Request-Id` header | Every reported error can be found in the logs. Parity tests skip this key, since each server generates its own id |

@@ -30,6 +30,8 @@ public class ParityTests
         "/api/v1/blog/parity-first-post",
         "/api/v1/blog/does-not-exist",
         "/api/v1/cars/does-not-exist",
+        "/api/v1/cars/00000000-0000-4000-8000-000000000000/availability?pickup_date=2030-06-01T10:00:00&dropoff_date=2030-06-05T10:00:00",
+        "/api/v1/does-not-exist",
     ];
 
     /// <summary>
@@ -71,6 +73,7 @@ public class ParityTests
         {
             await AssertSameAsync($"/api/v1/cars/{id}/availability?pickup_date=2030-06-01T10:00:00&dropoff_date=2030-06-05T10:00:00", ignoreArrayOrder: false);
             await AssertSameAsync($"/api/v1/cars/{id}/availability", ignoreArrayOrder: false);
+            await AssertSameAsync($"/api/v1/cars/{id}/availability?pickup_date=2030-06-05T10:00:00&dropoff_date=2030-06-01T10:00:00", ignoreArrayOrder: false);
         }
     }
 

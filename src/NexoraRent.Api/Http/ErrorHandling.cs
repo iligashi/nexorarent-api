@@ -20,17 +20,28 @@ internal static class ErrorHandling
                 ? "Internal server error"
                 : exception.Message;
 
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            // A dictionary keeps the camelCase "requestId" key the client expects;
-            // the snake_case naming policy only renames object properties.
-            await context.Response.WriteAsJsonAsync(new Dictionary<string, string>
-            {
-                ["error"] = message,
-                ["requestId"] = context.TraceIdentifier,
-            });
+            await Error(StatusCodes.Status500InternalServerError, message).ExecuteAsync(context);
         }));
     }
 
-    public static IResult Error(int statusCode, string message) =>
-        Results.Json(new { error = message }, statusCode: statusCode);
+    /// <summary>
+    /// An error response, <c>{ error, requestId }</c>. The request id matches the
+    /// <c>X-Request-Id</c> header, so a reported error can be found in the logs.
+    /// </summary>
+    public static IResult Error(int statusCode, string message) => new ErrorResult(statusCode, message);
+
+    private sealed class ErrorResult(int statusCode, string message) : IResult
+    {
+        public Task ExecuteAsync(HttpContext httpContext)
+        {
+            httpContext.Response.StatusCode = statusCode;
+            // A dictionary keeps the camelCase "requestId" key the client expects;
+            // the snake_case naming policy only renames object properties.
+            return httpContext.Response.WriteAsJsonAsync(new Dictionary<string, string>
+            {
+                ["error"] = message,
+                ["requestId"] = httpContext.TraceIdentifier,
+            });
+        }
+    }
 }
