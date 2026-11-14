@@ -34,6 +34,85 @@ jobs:
       - name: Test (unit + MySQL integration)
         run: dotnet test --solution NexoraRent.slnx --no-build -c Release
 
+  # Runs the Express API and the .NET API side by side on one seeded database
+  # and fails on any difference in the responses of the ported routes.
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: parity
+          MYSQL_DATABASE: drenas_rentacar
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pparity"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      NODE_ENV: development
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_NAME: drenas_rentacar
+      DB_USER: root
+      DB_PASSWORD: parity
+      # mysql2 converts DATETIME with the process time zone; production runs in UTC.
+      TZ: UTC
+      PARITY_EXPRESS_URL: http://127.0.0.1:4000
+      PARITY_DOTNET_URL: http://127.0.0.1:5080
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out the Express API
+        uses: actions/checkout@v4
+        with:
+          repository: iligashi/nexorarent
+          ref: main
+          path: express
+          sparse-checkout: server
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: express/server/package-lock.json
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Migrate and seed with the Express scripts
+        working-directory: express/server
+        run: |
+          npm ci --omit=dev
+          npm run db:migrate
+          npm run db:seed
+
+      - name: Load parity fixtures
+        run: mysql -h 127.0.0.1 -uroot -pparity drenas_rentacar < tests/NexoraRent.ParityTests/Sql/fixtures.sql
+
+      - name: Build
+        run: dotnet build NexoraRent.slnx -c Release
+
+      - name: Start both APIs
+        run: |
+          export JWT_SECRET="$(openssl rand -hex 32)" JWT_REFRESH_SECRET="$(openssl rand -hex 32)"
+          (cd express/server && PORT=4000 nohup node src/index.js > "$RUNNER_TEMP/express.log" 2>&1 &)
+          nohup dotnet src/NexoraRent.Api/bin/Release/net10.0/NexoraRent.Api.dll --urls http://127.0.0.1:5080 > "$RUNNER_TEMP/dotnet.log" 2>&1 &
+          for url in "$PARITY_EXPRESS_URL/api/health" "$PARITY_DOTNET_URL/api/health"; do
+            timeout 60 bash -c "until curl -sf '$url' > /dev/null; do sleep 1; done" || { echo "$url did not come up"; exit 1; }
+          done
+
+      - name: Parity tests
+        run: dotnet test --project tests/NexoraRent.ParityTests --no-build -c Release
+
+      - name: API logs
+        if: failure()
+        run: tail -n 100 "$RUNNER_TEMP/express.log" "$RUNNER_TEMP/dotnet.log"
+
   docker:
     runs-on: ubuntu-latest
     timeout-minutes: 15
