@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NexoraRent.Api/NexoraRent.Api.csproj" />
+    <Project Path="src/NexoraRent.Core/NexoraRent.Core.csproj" />
+    <Project Path="src/NexoraRent.Infrastructure/NexoraRent.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NexoraRent.IntegrationTests/NexoraRent.IntegrationTests.csproj" />
+    <Project Path="tests/NexoraRent.UnitTests/NexoraRent.UnitTests.csproj" />
+  </Folder>
+</Solution>
