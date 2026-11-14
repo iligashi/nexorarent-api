@@ -1,6 +1,10 @@
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using NexoraRent.Core.Blog;
 using NexoraRent.Core.Cars;
+using NexoraRent.Core.Catalog;
+using NexoraRent.Infrastructure.Blog;
+using NexoraRent.Infrastructure.Catalog;
 using NexoraRent.Core.Users;
 using NexoraRent.Infrastructure.Cars;
 using NexoraRent.Infrastructure.Data;
@@ -23,6 +27,8 @@ public static class DependencyInjection
 
         services.AddSingleton<MySqlConnectionFactory>();
         services.AddScoped<ICarRepository, CarRepository>();
+        services.AddScoped<ICatalogRepository, CatalogRepository>();
+        services.AddScoped<IBlogRepository, BlogRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         return services;
     }
