@@ -26,8 +26,16 @@ public sealed record BookingPeriod(DateTime Pickup, DateTime Dropoff)
     /// <summary>Two periods overlap when each one starts before the other ends.</summary>
     public bool Overlaps(DateTime otherPickup, DateTime otherDropoff) => otherPickup < Dropoff && otherDropoff > Pickup;
 
+    /// <summary>
+    /// True for a real <c>yyyy-MM-ddTHH:mm:ss</c> date and time, like
+    /// <c>isValidLocalDateTime</c> in Express. Years below 100 are rejected there,
+    /// because <c>Date.UTC</c> reads them as 19xx, so they are rejected here too.
+    /// </summary>
+    public static bool IsValidLocalDateTime(string? value) => TryParseLocal(value, out _);
+
     private static bool TryParseLocal(string? value, out DateTime result) =>
-        DateTime.TryParseExact(value, Format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result);
+        DateTime.TryParseExact(value, Format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result)
+        && result.Year >= 100;
 }
 
 public sealed record BlockedPeriod(DateTime PickupDate, DateTime DropoffDate);

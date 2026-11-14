@@ -48,6 +48,7 @@ internal static class JwtSetup
                 };
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = ReadTokenLikeExpress,
                     OnTokenValidated = LoadUserAsync,
                     OnChallenge = WriteChallengeAsync,
                 };
@@ -59,6 +60,23 @@ internal static class JwtSetup
 
     /// <summary>The signed-in user, loaded once per request after the token is validated.</summary>
     public static User? CurrentUser(this HttpContext context) => context.Items[UserItemKey] as User;
+
+    /// <summary>
+    /// Express only accepts <c>Bearer &lt;token&gt;</c> with that exact casing and takes the
+    /// second space-separated part as the token. Anything else counts as no token.
+    /// </summary>
+    private static Task ReadTokenLikeExpress(MessageReceivedContext context)
+    {
+        var header = context.Request.Headers.Authorization.ToString();
+        if (!header.StartsWith("Bearer ", StringComparison.Ordinal))
+        {
+            context.NoResult();
+            return Task.CompletedTask;
+        }
+
+        context.Token = header.Split(' ')[1];
+        return Task.CompletedTask;
+    }
 
     private static async Task LoadUserAsync(TokenValidatedContext context)
     {

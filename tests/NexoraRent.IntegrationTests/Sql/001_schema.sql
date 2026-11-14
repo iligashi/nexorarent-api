@@ -55,20 +55,74 @@ CREATE TABLE car_images (
   FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE locations (
+  id CHAR(36) PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  address TEXT,
+  city VARCHAR(100),
+  lat DECIMAL(10,7),
+  lng DECIMAL(10,7),
+  is_active BOOLEAN DEFAULT true
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE extras (
+  id CHAR(36) PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  price_per_day DECIMAL(10,2) NOT NULL,
+  icon VARCHAR(50),
+  is_active BOOLEAN DEFAULT true
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE reservations (
   id CHAR(36) PRIMARY KEY,
   reservation_no VARCHAR(20) UNIQUE NOT NULL,
   user_id CHAR(36),
   car_id CHAR(36) NOT NULL,
+  pickup_location CHAR(36),
+  dropoff_location CHAR(36),
   pickup_date DATETIME NOT NULL,
   dropoff_date DATETIME NOT NULL,
   status ENUM('pending','confirmed','active','completed','cancelled','rejected') DEFAULT 'pending',
   total_days INT NOT NULL,
   daily_rate DECIMAL(10,2) NOT NULL,
+  extras_total DECIMAL(10,2) DEFAULT 0,
+  discount DECIMAL(10,2) DEFAULT 0,
   total_price DECIMAL(10,2) NOT NULL,
+  guest_name VARCHAR(200),
+  guest_email VARCHAR(255),
+  guest_phone VARCHAR(30),
+  notes TEXT,
+  admin_notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  loyalty_points_earned INT DEFAULT 0,
+  loyalty_points_redeemed INT DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (car_id) REFERENCES cars(id)
+  FOREIGN KEY (car_id) REFERENCES cars(id),
+  FOREIGN KEY (pickup_location) REFERENCES locations(id),
+  FOREIGN KEY (dropoff_location) REFERENCES locations(id),
+  INDEX idx_res_car_status_dates (car_id, status, pickup_date, dropoff_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE reservation_extras (
+  id CHAR(36) PRIMARY KEY,
+  reservation_id CHAR(36) NOT NULL,
+  extra_id CHAR(36) NOT NULL,
+  quantity INT DEFAULT 1,
+  price DECIMAL(10,2) NOT NULL,
+  FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE,
+  FOREIGN KEY (extra_id) REFERENCES extras(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE seasonal_pricing (
+  id CHAR(36) PRIMARY KEY,
+  car_id CHAR(36),
+  name VARCHAR(100),
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  multiplier DECIMAL(4,2) DEFAULT 1.00,
+  FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE reviews (
