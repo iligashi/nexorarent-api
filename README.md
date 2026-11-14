@@ -10,8 +10,8 @@ replace the existing Express API **one route group at a time, without downtime**
 share the same MySQL database and the same JWT secret, and the Next.js frontend does not change:
 Next.js rewrites decide which backend serves each route.
 
-> **Status:** early. The public read endpoints (cars, locations, extras, blog) and `GET /auth/me`
-> are ported and tested against the Express API.
+> **Status:** the public read endpoints (cars, locations, extras, blog), customer reservations,
+> reviews and `GET /auth/me` are ported and tested against the Express API.
 > See the [migration plan](docs/migration-plan.md) for what comes next.
 
 ## What's here
@@ -26,6 +26,11 @@ Next.js rewrites decide which backend serves each route.
 | `GET /api/v1/extras` | Active rental extras with daily price |
 | `GET /api/v1/blog` | Published posts, newest first, paged |
 | `GET /api/v1/blog/{slug}` | One published post with its author name |
+| `POST /api/v1/reservations` | Book a car as a guest or signed-in customer, with extras and seasonal prices |
+| `GET /api/v1/reservations/mine` | The signed-in customer's bookings |
+| `GET /api/v1/reservations/{id}` | One booking with its extras (owner, or staff roles) |
+| `PUT /api/v1/reservations/{id}/cancel` | Cancel a pending or confirmed booking |
+| `POST /api/v1/reviews` | Review a completed booking, once |
 | `GET /api/v1/auth/me` | Current user, from an access token issued by the Express API |
 | `GET /api/health` | Database health, same shape as the Express health check |
 
@@ -60,6 +65,11 @@ Design decisions are recorded in [`docs/adr`](docs/adr), starting with
 
 ## Highlights
 
+- **No double bookings across two backends:** bookings take the same MySQL `GET_LOCK` per car as
+  Express and lock the car and overlapping rows inside a transaction, so Express and this API
+  can both take bookings during the migration.
+- **Same validation errors:** request bodies are checked with the rules and exact messages of the
+  zod schemas in Express.
 - **Token compatibility:** validates the HS256 access tokens Express issues (`userId` claim,
   no clock skew) and returns the same 401 messages (`Token expired`, `Invalid token`, ...).
 - **Shared configuration:** reads the Express variable names (`DB_HOST`, `JWT_SECRET`,

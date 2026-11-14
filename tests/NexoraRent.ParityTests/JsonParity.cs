@@ -19,14 +19,21 @@ public static class JsonParity
 {
     private const string RequestIdKey = "requestId";
 
-    public static IReadOnlyList<string> Compare(JsonElement express, JsonElement dotnet, bool ignoreArrayOrder = false)
+    /// <param name="ignoredKeys">
+    /// Keys whose values each server generates itself (ids, timestamps of new rows),
+    /// skipped at any depth. The key must still be present on both sides.
+    /// </param>
+    public static IReadOnlyList<string> Compare(
+        JsonElement express, JsonElement dotnet, bool ignoreArrayOrder = false, IReadOnlySet<string>? ignoredKeys = null)
     {
         var differences = new List<string>();
-        Compare(express, dotnet, "$", ignoreArrayOrder, differences);
+        Compare(express, dotnet, "$", new Options(ignoreArrayOrder, ignoredKeys ?? new HashSet<string>()), differences);
         return differences;
     }
 
-    private static void Compare(JsonElement express, JsonElement dotnet, string path, bool ignoreArrayOrder, List<string> differences)
+    private sealed record Options(bool IgnoreArrayOrder, IReadOnlySet<string> IgnoredKeys);
+
+    private static void Compare(JsonElement express, JsonElement dotnet, string path, Options options, List<string> differences)
     {
         if (express.ValueKind == JsonValueKind.Object && dotnet.ValueKind == JsonValueKind.Object)
         {
@@ -43,9 +50,9 @@ public static class JsonParity
                 differences.Add($"{path}.{key}: only in .NET");
             }
 
-            foreach (var key in expressKeys.Intersect(dotnetKeys))
+            foreach (var key in expressKeys.Intersect(dotnetKeys).Where(key => !options.IgnoredKeys.Contains(key)))
             {
-                Compare(express.GetProperty(key), dotnet.GetProperty(key), $"{path}.{key}", ignoreArrayOrder, differences);
+                Compare(express.GetProperty(key), dotnet.GetProperty(key), $"{path}.{key}", options, differences);
             }
 
             return;
@@ -61,7 +68,7 @@ public static class JsonParity
                 return;
             }
 
-            if (ignoreArrayOrder)
+            if (options.IgnoreArrayOrder)
             {
                 expressItems = [.. expressItems.OrderBy(SortKey, StringComparer.Ordinal)];
                 dotnetItems = [.. dotnetItems.OrderBy(SortKey, StringComparer.Ordinal)];
@@ -69,7 +76,7 @@ public static class JsonParity
 
             for (var i = 0; i < expressItems.Count; i++)
             {
-                Compare(expressItems[i], dotnetItems[i], $"{path}[{i}]", ignoreArrayOrder, differences);
+                Compare(expressItems[i], dotnetItems[i], $"{path}[{i}]", options, differences);
             }
 
             return;

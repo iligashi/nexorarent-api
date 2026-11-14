@@ -13,8 +13,8 @@ namespace NexoraRent.ParityTests;
 /// </summary>
 public class ParityTests
 {
-    private static readonly Uri? ExpressUrl = UrlFromEnvironment("PARITY_EXPRESS_URL");
-    private static readonly Uri? DotnetUrl = UrlFromEnvironment("PARITY_DOTNET_URL");
+    private static Uri? ExpressUrl => ParityEnvironment.ExpressUrl;
+    private static Uri? DotnetUrl => ParityEnvironment.DotnetUrl;
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
     /// <summary>
@@ -107,14 +107,5 @@ public class ParityTests
         return ((int)response.StatusCode, document.RootElement.Clone());
     }
 
-    private static void SkipWhenNotConfigured()
-    {
-        if (ExpressUrl is null || DotnetUrl is null)
-        {
-            Assert.Skip("Set PARITY_EXPRESS_URL and PARITY_DOTNET_URL to compare the two APIs.");
-        }
-    }
-
-    private static Uri? UrlFromEnvironment(string name) =>
-        Uri.TryCreate(Environment.GetEnvironmentVariable(name), UriKind.Absolute, out var url) ? url : null;
+    private static void SkipWhenNotConfigured() => ParityEnvironment.SkipUnlessApisConfigured();
 }

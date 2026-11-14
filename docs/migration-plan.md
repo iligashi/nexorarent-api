@@ -34,9 +34,9 @@ Then set `NEXT_PUBLIC_API_URL=/api/v1` on Vercel. Rolling a group back is a one-
 | 1 | `GET /cars`, `/cars/featured`, `/cars/:slug`, `/cars/:id/availability` | ✅ done | Read-only, highest traffic |
 | 2 | `GET /auth/me` | ✅ done | Proves Express tokens validate here |
 | 3 | `GET /locations`, `/extras`, `/blog`, `/blog/:slug` | ✅ done | Read-only. `POST /reviews` is a write and moves with step 4 |
-| 4 | `/reservations`, `POST /reviews` | ⏳ next | Needs the per-car lock and overlap check inside a transaction |
-| 5 | `/auth/login`, `/register`, `/refresh`, `/logout` | ⏳ | Port refresh-token rotation and bcrypt verification |
-| 6 | `/admin/*` | ⏳ | Role checks, audit log, image upload to object storage |
+| 4 | `/reservations` (create, mine, get, cancel), `POST /reviews` | ✅ done | Same per-car `GET_LOCK` and row locks as Express, so both can take bookings at once |
+| 5 | `/auth/login`, `/register`, `/refresh`, `/logout` | ⏳ next | Port refresh-token rotation and bcrypt verification |
+| 6 | `/admin/*` | ⏳ | Role checks, audit log, image upload to object storage. Admin reservation writes use the same lock name |
 | 7 | Retire Express | ⏳ | Move schema migrations into this repo |
 
 ## Rules while both run
@@ -47,8 +47,11 @@ Then set `NEXT_PUBLIC_API_URL=/api/v1` on Vercel. Rolling a group back is a one-
 - **Same JSON.** Every moved route keeps its URL, status codes, error messages and
   snake_case response shape. The integration tests pin that contract, and the parity
   tests prove it against the real Express API (see below).
-- **One owner per write path.** A table's writes move together (for example all
-  reservation writes in step 4) so locking logic never runs in two places.
+- **Shared locks for shared writes.** Customer bookings move in step 4, while admin
+  bookings, status changes and extensions stay on Express until step 6. Until then both
+  APIs write `reservations`, so both take the same MySQL `GET_LOCK`
+  (`nexorarent:reservation:{carId}`) and lock the car and overlapping rows in a
+  transaction. A parity test books one car on both APIs at once and expects one booking.
 
 ## Parity tests
 
@@ -64,11 +67,25 @@ to `ParityTests.cs` before its rewrite is switched on.
 To run them locally, start both APIs on the same database and set the URLs:
 
 ```bash
-PARITY_EXPRESS_URL=http://localhost:4000 PARITY_DOTNET_URL=http://localhost:5080   dotnet test --project tests/NexoraRent.ParityTests
+PARITY_EXPRESS_URL=http://localhost:4000 PARITY_DOTNET_URL=http://localhost:5080 \
+  dotnet test --project tests/NexoraRent.ParityTests
 ```
 
 Express reads `DATETIME` values as UTC (mysql2 `timezone: 'Z'`). Versions before that
 used the Node process time zone, so with an older Express start it with `TZ=UTC`.
+
+### Write routes
+
+`WriteParityTests` sends each write to Express, puts the database back the way it was,
+sends the same write to .NET, and compares the responses and the stored rows (generated
+ids, booking numbers and timestamps excepted). They also book the same car on both APIs at
+the same moment and expect exactly one booking, which proves the two share the lock.
+
+They need two more variables: `PARITY_JWT_SECRET` (the `JWT_SECRET` both APIs use, to sign
+customer tokens) and `PARITY_DB` (a connection string to their database). Use a separate
+database with the Express migrations, seed and `Sql/fixtures.sql`, never your development
+data. Express allows 20 requests to `/reservations` per IP every 15 minutes and the suite
+sends 18, so restart Express before running it twice in a row.
 
 ## Known differences from Express
 
@@ -80,3 +97,5 @@ used the Node process time zone, so with an older Express start it with `TZ=UTC`
 | Search | `%` and `_` act as wildcards | Treated as literal text | Predictable search |
 | 4xx messages in production | Replaced with "Internal server error" by the error handler | Real message | Client can show a useful error |
 | `requestId` in error bodies | Only when the error goes through `next(err)` | On every error body, equal to the `X-Request-Id` header | Every reported error can be found in the logs. Parity tests skip this key, since each server generates its own id |
+| Booking errors in production (409 "Car is not available", ...) | Replaced with "Internal server error" by the error handler | Real message | Same reason as the row above; the booking page can say why |
+| Malformed JSON body | 400 with the parser's message | 400 "Request body is not valid JSON" | Parser messages differ per runtime |

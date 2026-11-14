@@ -6,6 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="MySqlConnector" />
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
 
