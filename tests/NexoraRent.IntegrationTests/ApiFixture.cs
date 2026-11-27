@@ -55,7 +55,9 @@ public sealed class ApiFixture : IAsyncLifetime
             Assert.Skip(SkipReason);
         }
 
-        var connection = new MySqlConnection(_mysql!.GetConnectionString());
+        // Like the API: CHAR(36) ids stay strings.
+        var settings = new MySqlConnectionStringBuilder(_mysql!.GetConnectionString()) { GuidFormat = MySqlGuidFormat.None };
+        var connection = new MySqlConnection(settings.ConnectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         return connection;
     }

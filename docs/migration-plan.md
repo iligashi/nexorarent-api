@@ -36,7 +36,9 @@ Then set `NEXT_PUBLIC_API_URL=/api/v1` on Vercel. Rolling a group back is a one-
 | 3 | `GET /locations`, `/extras`, `/blog`, `/blog/:slug` | ✅ done | Read-only. `POST /reviews` is a write and moves with step 4 |
 | 4 | `/reservations` (create, mine, get, cancel), `POST /reviews` | ✅ done | Same per-car `GET_LOCK` and row locks as Express, so both can take bookings at once |
 | 5 | `/auth/*`: register, login, refresh, logout, logout-all, profile, loyalty | ✅ done | Same bcrypt hashes, JWTs, `refreshToken` cookie and `refresh_token_sessions` rows, so a session moves freely between the two APIs |
-| 6 | `/admin/*` | ⏳ next | Role checks, audit log, image upload to object storage. Admin reservation writes use the same lock name |
+| 6a | Admin foundation and `/admin/reviews` | ✅ done | Role checks (`requireAdmin`, `requireManager`), and the audit log: every successful admin write gets an `admin_audit_log` row before the response, or a 500 if that row cannot be written |
+| 6b | `/admin/pricing`, `/loyalty`, `/notifications`, `/expenses`, `/maintenance`, `/deliveries` | ⏳ next | Self-contained groups on their own tables |
+| 6c | The rest of `/admin` (dashboard, reservations, cars and images, customers, messages, blog, settings, invoices) and `/upload` | ⏳ | Admin reservation writes take the same `GET_LOCK` as customer bookings; images go to object storage |
 | 7 | Retire Express | ⏳ | Move schema migrations into this repo |
 
 ## Rules while both run
@@ -102,4 +104,6 @@ sends 18, so restart Express before running it twice in a row.
 | Clearing the refresh cookie (logout, bad refresh) | Express 4 `clearCookie` with `maxAge` sets an **empty cookie that lasts 7 days** | Expires the cookie (`expires=1970`) | The cookie is really gone. Both sides treat an empty cookie as no token, so the client sees no difference |
 | Session times | `CURRENT_TIMESTAMP` (MySQL session time zone) | `UTC_TIMESTAMP()` | `expires_at` is written in UTC by both APIs, so comparing in UTC stays right whatever time zone MySQL runs in |
 | Sign-in with an unknown email | Answers at once | Runs one bcrypt check first | Same 401 either way, but the response time no longer tells whether an account exists |
+| `PUT /admin/reviews/:id/reply` with a non-string `admin_reply` | 500 (`trim` is not a function) | 400 "admin_reply is required" | A bad body is the client's error |
+| `page` / `limit` on admin lists | Unbounded; a non-number makes the query fail | Page at least 1, limit clamped to 1–100 | Same rule as the public lists |
 | Two sign-ups with one email at the same moment | The second hits the unique key and returns 500 | 409 "Email already registered" | The unique key decides, and the loser gets the normal answer |

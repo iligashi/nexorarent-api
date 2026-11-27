@@ -14,6 +14,7 @@ internal static class TestData
     public const string FiatId = "aaaaaaaa-0000-4000-8000-000000000004";
     public const string OwnerId = "22222222-2222-4222-8222-222222222222";
     public const string OtherCustomerId = "33333333-3333-4333-8333-333333333333";
+    public const string StaffId = "55555555-5555-4555-8555-555555555555";
     public const string DrenasId = "eeeeeeee-0000-4000-8000-000000000001";
     public const string AirportId = "eeeeeeee-0000-4000-8000-000000000002";
     public const string ClosedLocationId = "eeeeeeee-0000-4000-8000-000000000003";
