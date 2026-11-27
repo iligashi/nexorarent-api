@@ -104,7 +104,7 @@ public sealed class NotificationRepository(MySqlConnectionFactory connections) :
         await using var connection = await connections.OpenAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<ReservationNotificationData>(new CommandDefinition(
             """
-            SELECT r.reservation_no, r.guest_name, r.pickup_date, r.dropoff_date, r.total_price, r.status,
+            SELECT r.reservation_no, r.user_id, r.guest_name, r.pickup_date, r.dropoff_date, r.total_price, r.status,
                    c.brand, c.model,
                    COALESCE(r.guest_name, CONCAT(u.first_name, ' ', u.last_name)) AS customer_name,
                    pl.name AS pickup_location, dl.name AS dropoff_location

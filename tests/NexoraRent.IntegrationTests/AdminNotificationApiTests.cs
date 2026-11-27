@@ -73,7 +73,7 @@ public class AdminNotificationApiTests(ApiFixture api)
         var entry = (await ReadAsync(await SendAsync(HttpMethod.Get, "/api/v1/admin/notifications/log?status=sent&limit=100", Staff)))
             .GetProperty("notifications").EnumerateArray().Single(n => n.GetProperty("recipient").GetString() == recipient);
         Assert.Equal("DRC-1", entry.GetProperty("reservation_no").GetString());
-        Assert.Equal("", entry.GetProperty("customer_name").GetString());
+        Assert.Equal("Arta Krasniqi", entry.GetProperty("customer_name").GetString());
     }
 
     [Fact]
