@@ -51,6 +51,41 @@ public sealed record LoyaltyAccountDetail(LoyaltyAccountWithUser Account, IReadO
 /// <summary>A manual change to an account's points, logged as an <c>adjust</c> transaction.</summary>
 public sealed record PointsAdjustment(int Points, string Description);
 
+/// <summary>An account's points after a change.</summary>
+public sealed record PointsTotals(int Balance, int? Lifetime, string Tier);
+
+public enum PointsAdjustmentStatus
+{
+    Saved,
+    NotFound,
+
+    /// <summary>The new balance or lifetime total would not fit the INT columns.</summary>
+    TooLarge,
+}
+
+public sealed record PointsAdjustmentResult(PointsAdjustmentStatus Status, LoyaltyAccount? Account = null);
+
+/// <summary>The arithmetic of <c>PUT /accounts/:id/adjust</c>.</summary>
+public static class LoyaltyPoints
+{
+    /// <summary>
+    /// <c>Math.max(0, balance + points)</c>; lifetime points only grow, and set the tier. NULL counts
+    /// as 0, as in JS, but a NULL lifetime stays NULL when nothing is added. Null when a total would
+    /// not fit an INT column.
+    /// </summary>
+    public static PointsTotals? Apply(int? balance, int? lifetime, int points)
+    {
+        var newBalance = Math.Max(0L, (long)(balance ?? 0) + points);
+        long? newLifetime = points > 0 ? (long)(lifetime ?? 0) + points : lifetime;
+        if (newBalance > int.MaxValue || newLifetime > int.MaxValue)
+        {
+            return null;
+        }
+
+        return new PointsTotals((int)newBalance, (int?)newLifetime, LoyaltyTiers.ForLifetimePoints(newLifetime ?? 0));
+    }
+}
+
 public sealed record NewLoyaltyReward(string Name, string? Description, string Type, decimal Value, int PointsCost, string MinTier);
 
 /// <summary>The fields sent to <c>PUT /admin/loyalty/rewards/:id</c>; each is set only when its key was sent.</summary>
@@ -106,8 +141,8 @@ public interface ILoyaltyRepository
     /// <summary>The account and its latest 50 transactions; null when there is no such account.</summary>
     Task<LoyaltyAccountDetail?> GetAccountAsync(string id, CancellationToken cancellationToken);
 
-    /// <summary>Applies and logs the change in one transaction; null when there is no such account.</summary>
-    Task<LoyaltyAccount?> AdjustPointsAsync(string id, PointsAdjustment adjustment, CancellationToken cancellationToken);
+    /// <summary>Applies and logs the change in one transaction.</summary>
+    Task<PointsAdjustmentResult> AdjustPointsAsync(string id, PointsAdjustment adjustment, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<LoyaltyReward>> ListRewardsAsync(CancellationToken cancellationToken);
 

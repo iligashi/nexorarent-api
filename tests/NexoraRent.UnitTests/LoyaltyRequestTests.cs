@@ -15,6 +15,24 @@ public class LoyaltyRequestTests
     public void Tiers_follow_lifetime_points(long points, string tier) => Assert.Equal(tier, LoyaltyTiers.ForLifetimePoints(points));
 
     [Theory]
+    [InlineData(150, 150, 400, 550, 550, "gold")]
+    [InlineData(100, 550, -1000, 0, 550, "gold")]
+    [InlineData(null, null, 5, 5, 5, "bronze")]
+    [InlineData(null, null, -5, 0, null, "bronze")]
+    public void Points_follow_the_Express_arithmetic(int? balance, int? lifetime, int points, int newBalance, int? newLifetime, string tier) =>
+        Assert.Equal(new PointsTotals(newBalance, newLifetime, tier), LoyaltyPoints.Apply(balance, lifetime, points));
+
+    [Theory]
+    [InlineData(int.MaxValue, 0, 1)]
+    [InlineData(0, int.MaxValue, 1)]
+    public void Totals_past_the_INT_columns_are_refused(int balance, int lifetime, int points) =>
+        Assert.Null(LoyaltyPoints.Apply(balance, lifetime, points));
+
+    [Fact]
+    public void Taking_points_from_a_full_account_still_works() =>
+        Assert.Equal(new PointsTotals(int.MaxValue - 1, int.MaxValue, "platinum"), LoyaltyPoints.Apply(int.MaxValue, int.MaxValue, -1));
+
+    [Theory]
     [InlineData("""{"points":40,"description":"Bonus"}""", 40, "Bonus")]
     [InlineData("""{"points":"-25","description":""}""", -25, LoyaltyRequest.DefaultAdjustmentDescription)]
     [InlineData("""{"points":5}""", 5, LoyaltyRequest.DefaultAdjustmentDescription)]
