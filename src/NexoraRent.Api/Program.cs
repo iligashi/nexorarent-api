@@ -75,6 +75,7 @@ v1.MapAdminReviewEndpoints();
 v1.MapAdminPricingEndpoints();
 v1.MapAdminLoyaltyEndpoints();
 v1.MapAdminNotificationEndpoints();
+v1.MapAdminExpenseEndpoints();
 
 app.MapFallback(() => ErrorHandling.Error(StatusCodes.Status404NotFound, "Route not found"));
 
