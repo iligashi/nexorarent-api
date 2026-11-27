@@ -55,6 +55,7 @@ app.UseCors(CorsSetup.PolicyName);
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseWhen(AdminAuditMiddleware.Applies, admin => admin.UseMiddleware<AdminAuditMiddleware>());
 
 if (app.Environment.IsDevelopment())
 {
@@ -70,6 +71,7 @@ v1.MapBlogEndpoints();
 v1.MapReservationEndpoints();
 v1.MapReviewEndpoints();
 v1.MapAuthEndpoints();
+v1.MapAdminReviewEndpoints();
 
 app.MapFallback(() => ErrorHandling.Error(StatusCodes.Status404NotFound, "Route not found"));
 

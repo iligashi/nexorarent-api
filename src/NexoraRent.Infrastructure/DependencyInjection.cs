@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
+        services.AddScoped<IAdminReviewRepository, AdminReviewRepository>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }

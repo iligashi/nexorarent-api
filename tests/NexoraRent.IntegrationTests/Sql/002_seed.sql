@@ -49,3 +49,7 @@ INSERT INTO users (id, email, password_hash, first_name, last_name, phone, role)
 
 INSERT INTO loyalty_accounts (id, user_id, points_balance, lifetime_points, tier) VALUES
   ('bbbbbbbb-0000-4000-8000-000000000001', '22222222-2222-4222-8222-222222222222', 340, 900, 'gold');
+
+-- Admin tests: staff may read the admin area but not change reviews (manager or owner only).
+INSERT INTO users (id, email, password_hash, first_name, last_name, phone, role) VALUES
+  ('55555555-5555-4555-8555-555555555555', 'staff@example.test', 'x', 'Era', 'Shala', NULL, 'staff');

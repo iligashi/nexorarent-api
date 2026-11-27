@@ -12,7 +12,8 @@ Next.js rewrites decide which backend serves each route.
 
 > **Status:** the public read endpoints (cars, locations, extras, blog), customer reservations,
 > reviews and all of `/auth` (register, login, refresh-token rotation, logout, profile) are ported
-> and tested against the Express API. Next is `/admin/*`.
+> and tested against the Express API. The admin area has started with `/admin/reviews` and the
+> audit log; the other admin groups are next.
 > See the [migration plan](docs/migration-plan.md) for what comes next.
 
 ## What's here
@@ -40,6 +41,9 @@ Next.js rewrites decide which backend serves each route.
 | `GET /api/v1/auth/me` | Current user, from an access token issued by either API |
 | `PUT /api/v1/auth/me` | Update first name, last name or phone |
 | `GET /api/v1/auth/me/loyalty` | Loyalty points and tier |
+| `GET /api/v1/admin/reviews` | Staff: all reviews with author and car, filtered by `status` (pending, approved), paged |
+| `PUT /api/v1/admin/reviews/{id}/approve`, `/reject`, `/reply` | Managers and owners: moderate and answer reviews |
+| `DELETE /api/v1/admin/reviews/{id}` | Managers and owners: remove a review |
 | `GET /api/health` | Database health, same shape as the Express health check |
 
 Every endpoint keeps the Express API's URL, status codes, error messages and snake_case JSON,
