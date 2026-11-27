@@ -37,7 +37,7 @@ Then set `NEXT_PUBLIC_API_URL=/api/v1` on Vercel. Rolling a group back is a one-
 | 4 | `/reservations` (create, mine, get, cancel), `POST /reviews` | ✅ done | Same per-car `GET_LOCK` and row locks as Express, so both can take bookings at once |
 | 5 | `/auth/*`: register, login, refresh, logout, logout-all, profile, loyalty | ✅ done | Same bcrypt hashes, JWTs, `refreshToken` cookie and `refresh_token_sessions` rows, so a session moves freely between the two APIs |
 | 6a | Admin foundation and `/admin/reviews` | ✅ done | Role checks (`requireAdmin`, `requireManager`), and the audit log: every successful admin write gets an `admin_audit_log` row before the response, or a 500 if that row cannot be written |
-| 6b | `/admin/pricing`, `/loyalty`, `/notifications`, `/expenses`, `/maintenance`, `/deliveries` | 🚧 in progress (`/admin/pricing` done) | Self-contained groups on their own tables |
+| 6b | `/admin/pricing`, `/loyalty`, `/notifications`, `/expenses`, `/maintenance`, `/deliveries` | 🚧 in progress (`/admin/pricing`, `/admin/loyalty` done) | Self-contained groups on their own tables |
 | 6c | The rest of `/admin` (dashboard, reservations, cars and images, customers, messages, blog, settings, invoices) and `/upload` | ⏳ | Admin reservation writes take the same `GET_LOCK` as customer bookings; images go to object storage |
 | 7 | Retire Express | ⏳ | Move schema migrations into this repo |
 
@@ -111,3 +111,7 @@ sends 18, so restart Express before running it twice in a row.
 | `conditions` sent as a string | Stored as a JSON string, so the rule never applies | 400 "conditions must be an object" | Such a rule silently did nothing; the admin page now has to send an object |
 | `PUT /admin/pricing/rules/:id` for a missing rule | 200 with `{}` | 404 "Pricing rule not found" | The client can tell the rule is gone |
 | `GET /admin/pricing/calculate` with an unreadable date or a missing car | 500 (`NaN` dates, or reading `price_per_day` of undefined) | 400 "pickup_date and dropoff_date must be dates" / 404 "Car not found" | Same reason |
+| `PUT /admin/loyalty/accounts/:id/adjust` with `points` that is not a whole number, is 0, or is beyond ±1,000,000 | `parseInt` keeps the leading digits (`2.5` → 2, `"0"` logs a 0-point change); text that is not a number is a 500 | 400 ("points required" for 0) | A typo cannot move points silently |
+| Two point adjustments to one account at the same moment | Read, add and write back separately, so one can be lost | The account row is locked for the change, so both count | Points are money to the customer |
+| `PUT /admin/loyalty/rewards/:id` for a missing reward | 200 with `{}` | 404 "Reward not found" | Same as pricing rules |
+| A loyalty write with an unknown `type`/`min_tier`, a non-positive `value`/`points_cost`, or a description over the column size | MySQL rejects it and the answer is 500 | 400 with the field's message | A bad body is the client's error |
