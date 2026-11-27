@@ -26,6 +26,19 @@ internal static class LegacyEnvironment
     public static string? JwtSecret(IConfiguration configuration) =>
         configuration["JWT_SECRET"] ?? configuration["Jwt:Secret"];
 
+    public static string? JwtRefreshSecret(IConfiguration configuration) =>
+        configuration["JWT_REFRESH_SECRET"] ?? configuration["Jwt:RefreshSecret"];
+
+    /// <summary>COOKIE_SAME_SITE (lax, strict or none), default lax, like <c>refreshCookieOptions</c> in Express.</summary>
+    public static SameSiteMode CookieSameSite(IConfiguration configuration) =>
+        (configuration["COOKIE_SAME_SITE"] ?? "lax") switch
+        {
+            "lax" => SameSiteMode.Lax,
+            "strict" => SameSiteMode.Strict,
+            "none" => SameSiteMode.None,
+            var other => throw new InvalidOperationException($"COOKIE_SAME_SITE must be lax, strict or none, not '{other}'."),
+        };
+
     public static IReadOnlyList<string> ClientOrigins(IConfiguration configuration) =>
         (configuration["CLIENT_URL"] ?? configuration["Cors:ClientUrl"] ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

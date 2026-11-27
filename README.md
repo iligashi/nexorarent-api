@@ -11,7 +11,8 @@ share the same MySQL database and the same JWT secret, and the Next.js frontend 
 Next.js rewrites decide which backend serves each route.
 
 > **Status:** the public read endpoints (cars, locations, extras, blog), customer reservations,
-> reviews and `GET /auth/me` are ported and tested against the Express API.
+> reviews and all of `/auth` (register, login, refresh-token rotation, logout, profile) are ported
+> and tested against the Express API. Next is `/admin/*`.
 > See the [migration plan](docs/migration-plan.md) for what comes next.
 
 ## What's here
@@ -31,7 +32,14 @@ Next.js rewrites decide which backend serves each route.
 | `GET /api/v1/reservations/{id}` | One booking with its extras (owner, or staff roles) |
 | `PUT /api/v1/reservations/{id}/cancel` | Cancel a pending or confirmed booking |
 | `POST /api/v1/reviews` | Review a completed booking, once |
-| `GET /api/v1/auth/me` | Current user, from an access token issued by the Express API |
+| `POST /api/v1/auth/register` | Customer sign-up; returns `{ user, accessToken }` and sets the `refreshToken` cookie |
+| `POST /api/v1/auth/login` | Sign-in with email and password (bcrypt, compatible with Express hashes) |
+| `POST /api/v1/auth/refresh` | Rotates the refresh token: the old one is revoked, a new cookie and access token are issued |
+| `POST /api/v1/auth/logout` | Revokes the current refresh session |
+| `POST /api/v1/auth/logout-all` | Revokes every session of the signed-in user |
+| `GET /api/v1/auth/me` | Current user, from an access token issued by either API |
+| `PUT /api/v1/auth/me` | Update first name, last name or phone |
+| `GET /api/v1/auth/me/loyalty` | Loyalty points and tier |
 | `GET /api/health` | Database health, same shape as the Express health check |
 
 Every endpoint keeps the Express API's URL, status codes, error messages and snake_case JSON,

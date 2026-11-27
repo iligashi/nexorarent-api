@@ -35,6 +35,8 @@ public static class DependencyInjection
         services.AddScoped<ICatalogRepository, CatalogRepository>();
         services.AddScoped<IBlogRepository, BlogRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRefreshSessionRepository, RefreshSessionRepository>();
+        services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.TryAddSingleton(TimeProvider.System);
