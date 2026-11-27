@@ -25,7 +25,8 @@ public class AuthParityTests
     /// <summary>Values each server generates itself.</summary>
     private static readonly HashSet<string> Generated = new(StringComparer.Ordinal) { "id", "accessToken" };
 
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
+    // No cookie jar: cookies ignore the port, so one from Express would be sent to .NET and back.
+    private static readonly HttpClient Http = new(new HttpClientHandler { UseCookies = false }) { Timeout = TimeSpan.FromSeconds(60) };
 
     private static CancellationToken Cancel => TestContext.Current.CancellationToken;
 
