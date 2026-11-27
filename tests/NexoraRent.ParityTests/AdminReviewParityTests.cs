@@ -95,7 +95,19 @@ public class AdminReviewParityTests
         }
     }
 
-    private sealed record AuditRow(string RequestId, string? UserId, string Method, string Path, int StatusCode, string Action, string? TargetId, string? ChangeSummary);
+    // Settable properties, not a positional record: Dapper then converts column types itself
+    // (MySQL 8 and MariaDB disagree on the integer type CAST(... AS SIGNED) returns).
+    private sealed record AuditRow
+    {
+        public required string RequestId { get; init; }
+        public string? UserId { get; init; }
+        public required string Method { get; init; }
+        public required string Path { get; init; }
+        public int StatusCode { get; init; }
+        public required string Action { get; init; }
+        public string? TargetId { get; init; }
+        public string? ChangeSummary { get; init; }
+    }
 
     private static async Task AssertSameAsync(
         HttpMethod method, string path, string? body, string? token,
@@ -173,7 +185,7 @@ public class AdminReviewParityTests
         await using var db = await ParityEnvironment.OpenDatabaseAsync();
         return [.. await db.QueryAsync<AuditRow>(
             """
-            SELECT request_id AS RequestId, user_id AS UserId, method AS Method, path AS Path, CAST(status_code AS SIGNED) AS StatusCode,
+            SELECT request_id AS RequestId, user_id AS UserId, method AS Method, path AS Path, status_code AS StatusCode,
                    action AS Action, target_id AS TargetId, CAST(change_summary AS CHAR) AS ChangeSummary
             FROM admin_audit_log WHERE target_id = @targetId ORDER BY id
             """,
