@@ -178,6 +178,33 @@ CREATE TABLE loyalty_rewards (
   min_tier ENUM('bronze','silver','gold','platinum') DEFAULT 'bronze'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE notification_templates (
+  id CHAR(36) PRIMARY KEY,
+  type ENUM('booking_confirmation','pickup_reminder','return_reminder','review_request','status_change','loyalty_points') NOT NULL,
+  channel ENUM('whatsapp','email','sms') NOT NULL DEFAULT 'whatsapp',
+  template_name VARCHAR(200) NOT NULL,
+  template_body TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  UNIQUE KEY uq_template_type_channel (type, channel)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notification_log (
+  id CHAR(36) PRIMARY KEY,
+  reservation_id CHAR(36),
+  user_id CHAR(36),
+  type VARCHAR(50) NOT NULL,
+  channel VARCHAR(20) NOT NULL,
+  recipient VARCHAR(255) NOT NULL,
+  status ENUM('pending','sent','delivered','failed','read') DEFAULT 'pending',
+  error_message TEXT,
+  sent_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_notif_status (status),
+  INDEX idx_notif_reservation (reservation_id),
+  FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE reviews (
   id CHAR(36) PRIMARY KEY,
   user_id CHAR(36) NOT NULL,

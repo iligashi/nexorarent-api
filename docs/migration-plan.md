@@ -37,7 +37,7 @@ Then set `NEXT_PUBLIC_API_URL=/api/v1` on Vercel. Rolling a group back is a one-
 | 4 | `/reservations` (create, mine, get, cancel), `POST /reviews` | ✅ done | Same per-car `GET_LOCK` and row locks as Express, so both can take bookings at once |
 | 5 | `/auth/*`: register, login, refresh, logout, logout-all, profile, loyalty | ✅ done | Same bcrypt hashes, JWTs, `refreshToken` cookie and `refresh_token_sessions` rows, so a session moves freely between the two APIs |
 | 6a | Admin foundation and `/admin/reviews` | ✅ done | Role checks (`requireAdmin`, `requireManager`), and the audit log: every successful admin write gets an `admin_audit_log` row before the response, or a 500 if that row cannot be written |
-| 6b | `/admin/pricing`, `/loyalty`, `/notifications`, `/expenses`, `/maintenance`, `/deliveries` | 🚧 in progress (`/admin/pricing`, `/admin/loyalty` done) | Self-contained groups on their own tables |
+| 6b | `/admin/pricing`, `/loyalty`, `/notifications`, `/expenses`, `/maintenance`, `/deliveries` | 🚧 in progress (`/admin/pricing`, `/admin/loyalty`, `/admin/notifications` done) | Self-contained groups on their own tables |
 | 6c | The rest of `/admin` (dashboard, reservations, cars and images, customers, messages, blog, settings, invoices) and `/upload` | ⏳ | Admin reservation writes take the same `GET_LOCK` as customer bookings; images go to object storage |
 | 7 | Retire Express | ⏳ | Move schema migrations into this repo |
 
@@ -115,3 +115,8 @@ sends 18, so restart Express before running it twice in a row.
 | Two point adjustments to one account at the same moment | Read, add and write back separately, so one can be lost | The account row is locked for the change, so both count | Points are money to the customer |
 | `PUT /admin/loyalty/rewards/:id` for a missing reward | 200 with `{}` | 404 "Reward not found" | Same as pricing rules |
 | A loyalty write with an unknown `type`/`min_tier`, a non-positive `value`/`points_cost`, or a description over the column size | MySQL rejects it and the answer is 500 | 400 with the field's message | A bad body is the client's error |
+| `POST /admin/notifications/send` with a `reservation_id` that does not exist | Fills the template without the booking, then the log row fails its foreign key: 500 | 404 "Reservation not found", nothing logged | The admin sees the booking id is wrong |
+| `POST /admin/notifications/send` for a booking | The log row has no `user_id`, so the log shows no customer name for it | The booking's customer is logged | The log says who was messaged |
+| `POST /admin/notifications/send` with a non-text `type` or `recipient` | `recipient.replace` throws: 500 (a numeric `type` found no template: 200 `success: false`) | 400 "… must be text …" | A bad body is the client's error |
+| `PUT /admin/notifications/templates/:id` for a missing template, or with `template_body` empty or null | 200 with `{}`, or MySQL rejects NULL: 500 | 404 "Template not found" / 400 | Same as the other admin groups; a blank template would send empty messages |
+| `GET /admin/notifications/log` `page`/`limit` | Unbounded; a non-number makes the query fail | Page at least 1, limit clamped to 1–100 (default 30) | Same rule as the other admin lists |
