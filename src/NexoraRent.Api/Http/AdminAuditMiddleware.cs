@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Dapper;
@@ -101,6 +102,10 @@ internal sealed partial class AdminAuditMiddleware(
     /// <summary>
     /// The top-level keys of a JSON object body, like <c>Object.keys(req.body)</c> in Express.
     /// The body is rewound so the endpoint can read it again.
+    /// <para>
+    /// At most <see cref="JsonBody.MaxBytes"/> + 1 bytes are read, also for a chunked body with no
+    /// Content-Length: a bigger body is not parsed here, and the endpoint answers it with 413.
+    /// </para>
     /// </summary>
     private static async Task<IReadOnlyList<string>> ReadChangedFieldsAsync(HttpRequest request)
     {
@@ -109,10 +114,24 @@ internal sealed partial class AdminAuditMiddleware(
             return [];
         }
 
-        request.EnableBuffering(JsonBody.MaxBytes);
+        request.EnableBuffering();
+        var body = ArrayPool<byte>.Shared.Rent(JsonBody.MaxBytes + 1);
         try
         {
-            using var document = await JsonDocument.ParseAsync(request.Body, cancellationToken: request.HttpContext.RequestAborted);
+            var length = 0;
+            int read;
+            while (length <= JsonBody.MaxBytes
+                && (read = await request.Body.ReadAsync(body.AsMemory(length, JsonBody.MaxBytes + 1 - length), request.HttpContext.RequestAborted)) > 0)
+            {
+                length += read;
+            }
+
+            if (length is 0 or > JsonBody.MaxBytes)
+            {
+                return [];
+            }
+
+            using var document = JsonDocument.Parse(body.AsMemory(0, length));
             return document.RootElement.ValueKind == JsonValueKind.Object
                 ? [.. document.RootElement.EnumerateObject().Select(property => property.Name)]
                 : [];
@@ -124,6 +143,7 @@ internal sealed partial class AdminAuditMiddleware(
         }
         finally
         {
+            ArrayPool<byte>.Shared.Return(body);
             request.Body.Position = 0;
         }
     }

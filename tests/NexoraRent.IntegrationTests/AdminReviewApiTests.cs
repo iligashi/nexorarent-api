@@ -203,7 +203,30 @@ public class AdminReviewApiTests(ApiFixture api)
         Assert.Null(row.ChangeSummary);
     }
 
+    [Fact]
+    public async Task An_oversized_chunked_body_is_413_and_not_audited()
+    {
+        var id = await CreateReviewAsync(approved: false);
+        var json = $$"""{"admin_reply":"{{new string('a', 2 * 1024 * 1024)}}"}""";
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, new Uri($"/api/v1/admin/reviews/{id}/reply", UriKind.Relative));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Owner);
+        // A stream that cannot seek has no length, so the body goes chunked with no Content-Length.
+        request.Content = new StreamContent(new UnseekableStream(Encoding.UTF8.GetBytes(json)));
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        var response = await Client.SendAsync(request, Cancel);
+
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        Assert.Empty(await AuditRowsAsync(id));
+    }
+
     private static string Owner => TestData.AccessToken(TestData.OwnerId);
+
+    private sealed class UnseekableStream(byte[] bytes) : MemoryStream(bytes)
+    {
+        public override bool CanSeek => false;
+    }
 
     private async Task<string> CreateReviewAsync(bool approved)
     {
