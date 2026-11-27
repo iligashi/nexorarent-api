@@ -142,6 +142,7 @@ CREATE TABLE pricing_rules (
   FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- From the Express migrations 002_features.sql and 005_booking_and_session_safety.sql.
 CREATE TABLE loyalty_accounts (
   id CHAR(36) PRIMARY KEY,
   user_id CHAR(36) UNIQUE NOT NULL,
@@ -189,18 +190,6 @@ CREATE TABLE reviews (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (reservation_id) REFERENCES reservations(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- From the Express migrations 002_features.sql and 005_booking_and_session_safety.sql.
-CREATE TABLE loyalty_accounts (
-  id CHAR(36) PRIMARY KEY,
-  user_id CHAR(36) UNIQUE NOT NULL,
-  points_balance INT DEFAULT 0,
-  lifetime_points INT DEFAULT 0,
-  tier ENUM('bronze','silver','gold','platinum') DEFAULT 'bronze',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE refresh_token_sessions (
