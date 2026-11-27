@@ -125,6 +125,23 @@ CREATE TABLE seasonal_pricing (
   FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE pricing_rules (
+  id CHAR(36) PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  type ENUM('demand','advance_booking','duration','last_minute','event') NOT NULL,
+  car_id CHAR(36),
+  category VARCHAR(50),
+  multiplier DECIMAL(4,2) NOT NULL DEFAULT 1.00,
+  conditions JSON NOT NULL,
+  priority INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  start_date DATE,
+  end_date DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_pricing_active (is_active, start_date, end_date),
+  FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE reviews (
   id CHAR(36) PRIMARY KEY,
   user_id CHAR(36) NOT NULL,

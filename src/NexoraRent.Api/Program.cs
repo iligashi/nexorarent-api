@@ -72,6 +72,7 @@ v1.MapReservationEndpoints();
 v1.MapReviewEndpoints();
 v1.MapAuthEndpoints();
 v1.MapAdminReviewEndpoints();
+v1.MapAdminPricingEndpoints();
 
 app.MapFallback(() => ErrorHandling.Error(StatusCodes.Status404NotFound, "Route not found"));
 

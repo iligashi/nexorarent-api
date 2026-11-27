@@ -19,7 +19,8 @@ FROM cars ORDER BY slug LIMIT 1;
 -- nobody can sign in as these users; the tests sign their own access tokens.
 INSERT INTO users (id, email, password_hash, first_name, last_name, phone, role) VALUES
   ('dddddddd-0000-4000-8000-000000000001', 'parity-customer@example.test', 'not-a-hash', 'Parity', 'Customer', '+38344000001', 'customer'),
-  ('dddddddd-0000-4000-8000-000000000002', 'parity-other@example.test', 'not-a-hash', 'Parity', 'Other', NULL, 'customer');
+  ('dddddddd-0000-4000-8000-000000000002', 'parity-other@example.test', 'not-a-hash', 'Parity', 'Other', NULL, 'customer'),
+  ('dddddddd-0000-4000-8000-000000000003', 'parity-staff@example.test', 'not-a-hash', 'Parity', 'Staff', NULL, 'staff');
 
 -- A car that cannot be booked, an inactive location and an inactive extra.
 INSERT INTO cars (id, brand, model, year, slug, category, fuel, transmission, price_per_day, is_available)
