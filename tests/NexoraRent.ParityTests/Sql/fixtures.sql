@@ -54,3 +54,13 @@ FROM cars WHERE is_available = true ORDER BY slug LIMIT 1;
 INSERT INTO reservation_extras (id, reservation_id, extra_id, quantity, price)
 SELECT 'dddddddd-0000-4000-8000-0000000000f1', 'dddddddd-0000-4000-8000-0000000000e1', id, 1, 10.00
 FROM extras WHERE is_active = true ORDER BY name LIMIT 1;
+
+-- A loyalty account with an earn transaction (linked to a booking) and a manual one, and a
+-- reward, for the /admin/loyalty parity tests.
+INSERT INTO loyalty_accounts (id, user_id, points_balance, lifetime_points, tier) VALUES
+  ('dddddddd-0000-4000-8000-000000000101', 'dddddddd-0000-4000-8000-000000000001', 180, 180, 'bronze');
+INSERT INTO loyalty_transactions (id, account_id, reservation_id, type, points, description, created_at) VALUES
+  ('dddddddd-0000-4000-8000-000000000102', 'dddddddd-0000-4000-8000-000000000101', 'dddddddd-0000-4000-8000-0000000000e3', 'earn', 150, 'Earned from reservation', '2025-03-12 12:00:00'),
+  ('dddddddd-0000-4000-8000-000000000103', 'dddddddd-0000-4000-8000-000000000101', NULL, 'adjust', 30, 'Welcome bonus', '2025-03-13 12:00:00');
+INSERT INTO loyalty_rewards (id, name, description, type, value, points_cost, is_active, min_tier) VALUES
+  ('dddddddd-0000-4000-8000-000000000104', 'Parity free day', NULL, 'free_day', 1.00, 900, false, 'gold');

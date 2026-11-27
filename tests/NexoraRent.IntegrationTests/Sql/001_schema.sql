@@ -142,6 +142,41 @@ CREATE TABLE pricing_rules (
   FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE loyalty_accounts (
+  id CHAR(36) PRIMARY KEY,
+  user_id CHAR(36) UNIQUE NOT NULL,
+  points_balance INT DEFAULT 0,
+  lifetime_points INT DEFAULT 0,
+  tier ENUM('bronze','silver','gold','platinum') DEFAULT 'bronze',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE loyalty_transactions (
+  id CHAR(36) PRIMARY KEY,
+  account_id CHAR(36) NOT NULL,
+  reservation_id CHAR(36),
+  type ENUM('earn','redeem','bonus','expire','adjust') NOT NULL,
+  points INT NOT NULL,
+  description VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_loyalty_tx_account (account_id),
+  FOREIGN KEY (account_id) REFERENCES loyalty_accounts(id) ON DELETE CASCADE,
+  FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE loyalty_rewards (
+  id CHAR(36) PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+  type ENUM('discount_percent','discount_fixed','free_day','upgrade','free_extra') NOT NULL,
+  value DECIMAL(10,2) NOT NULL,
+  points_cost INT NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  min_tier ENUM('bronze','silver','gold','platinum') DEFAULT 'bronze'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE reviews (
   id CHAR(36) PRIMARY KEY,
   user_id CHAR(36) NOT NULL,
