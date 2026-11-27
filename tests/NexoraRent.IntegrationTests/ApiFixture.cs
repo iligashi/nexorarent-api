@@ -18,6 +18,8 @@ namespace NexoraRent.IntegrationTests;
 public sealed class ApiFixture : IAsyncLifetime
 {
     public const string JwtSecret = "integration-test-secret-that-is-long-enough-0123456789";
+    public const string JwtRefreshSecret = "integration-refresh-secret-that-is-long-enough-987654";
+    public const string ClientOrigin = "http://localhost:3000";
 
     private MySqlContainer? _mysql;
     private WebApplicationFactory<Program>? _factory;
@@ -32,6 +34,30 @@ public sealed class ApiFixture : IAsyncLifetime
         }
 
         return _factory!.CreateClient();
+    }
+
+    /// <summary>A client that keeps no cookies, so a test can send and read the refresh cookie itself.</summary>
+    public HttpClient CreateClientWithoutCookies()
+    {
+        if (SkipReason is not null)
+        {
+            Assert.Skip(SkipReason);
+        }
+
+        return _factory!.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+    }
+
+    /// <summary>A connection to the test database, to check the rows a request left behind.</summary>
+    public async Task<MySqlConnection> OpenDatabaseAsync()
+    {
+        if (SkipReason is not null)
+        {
+            Assert.Skip(SkipReason);
+        }
+
+        var connection = new MySqlConnection(_mysql!.GetConnectionString());
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        return connection;
     }
 
     public async ValueTask InitializeAsync()
@@ -56,8 +82,11 @@ public sealed class ApiFixture : IAsyncLifetime
             builder.UseEnvironment("Testing");
             builder.UseSetting("Database:ConnectionString", connectionString);
             builder.UseSetting("JWT_SECRET", JwtSecret);
+            builder.UseSetting("JWT_REFRESH_SECRET", JwtRefreshSecret);
+            builder.UseSetting("CLIENT_URL", ClientOrigin);
             // All test clients share one rate-limit partition, so lift the 20-per-15-minutes booking limit.
             builder.UseSetting("RateLimits:ReservationsPerWindow", "100000");
+            builder.UseSetting("RateLimits:AuthPerWindow", "100000");
         });
     }
 

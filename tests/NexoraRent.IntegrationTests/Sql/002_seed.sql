@@ -41,3 +41,11 @@ INSERT INTO reservations (id, reservation_no, user_id, car_id, pickup_date, drop
 INSERT INTO reviews (id, user_id, reservation_id, rating, comment, is_approved, created_at) VALUES
   ('dddddddd-0000-4000-8000-000000000001', '11111111-1111-4111-8111-111111111111', 'cccccccc-0000-4000-8000-000000000002', 4, 'Clean and economical', true, '2026-11-04 09:00:00'),
   ('dddddddd-0000-4000-8000-000000000002', '11111111-1111-4111-8111-111111111111', 'cccccccc-0000-4000-8000-000000000003', 1, 'Not approved yet', false, '2026-11-05 09:00:00');
+
+-- Auth tests (AuthSessionApiTests.cs). The hash was made by bcryptjs 2.4.3 in Express for
+-- 'correct horse battery staple', so signing in proves the two bcrypt libraries agree.
+INSERT INTO users (id, email, password_hash, first_name, last_name, phone, role) VALUES
+  ('44444444-4444-4444-8444-444444444444', 'legacy@example.test', '$2a$12$PSPRUFzAiMBKknv4s/E7oO6mniEytDIPCmM/hxiNHQt0sdvCdANLC', 'Lira', 'Gashi', NULL, 'customer');
+
+INSERT INTO loyalty_accounts (id, user_id, points_balance, lifetime_points, tier) VALUES
+  ('bbbbbbbb-0000-4000-8000-000000000001', '22222222-2222-4222-8222-222222222222', 340, 900, 'gold');

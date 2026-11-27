@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NexoraRent.Core\NexoraRent.Core.csproj" />
+    <ProjectReference Include="..\..\src\NexoraRent.Infrastructure\NexoraRent.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,5 @@
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using NexoraRent.Api.Http;
 using NexoraRent.Core.Users;
 
 namespace NexoraRent.Api.Auth;
@@ -15,22 +13,14 @@ internal static class JwtSetup
 {
     public const string UserIdClaim = "userId";
     private const string UserItemKey = "nexora.user";
-    private const int MinimumSecretLength = 32;
 
     public static IServiceCollection AddJwtAuthentication(
         this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
-        var secret = LegacyEnvironment.JwtSecret(configuration);
-        if (string.IsNullOrEmpty(secret) || secret.Length < MinimumSecretLength)
-        {
-            if (environment.IsProduction())
-            {
-                throw new InvalidOperationException($"JWT_SECRET must be set and at least {MinimumSecretLength} characters long.");
-            }
-
-            // Local development without a configured secret: tokens from Express will not validate.
-            secret = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(48));
-        }
+        var secrets = JwtSecrets.Load(configuration, environment);
+        services.AddSingleton(secrets);
+        services.AddSingleton<AuthTokens>();
+        services.AddSingleton<RefreshCookie>();
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -39,7 +29,7 @@ internal static class JwtSetup
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+                    IssuerSigningKey = new SymmetricSecurityKey(secrets.Access),
                     ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
                     ValidateIssuer = false,
                     ValidateAudience = false,

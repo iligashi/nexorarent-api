@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="MySqlConnector" />
   </ItemGroup>
