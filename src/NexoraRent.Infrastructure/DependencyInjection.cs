@@ -8,6 +8,7 @@ using NexoraRent.Infrastructure.Blog;
 using NexoraRent.Infrastructure.Catalog;
 using NexoraRent.Core.Reservations;
 using NexoraRent.Core.Loyalty;
+using NexoraRent.Core.Notifications;
 using NexoraRent.Core.Pricing;
 using NexoraRent.Core.Reviews;
 using NexoraRent.Core.Users;
@@ -15,6 +16,7 @@ using NexoraRent.Infrastructure.Cars;
 using NexoraRent.Infrastructure.Data;
 using NexoraRent.Infrastructure.Reservations;
 using NexoraRent.Infrastructure.Loyalty;
+using NexoraRent.Infrastructure.Notifications;
 using NexoraRent.Infrastructure.Pricing;
 using NexoraRent.Infrastructure.Reviews;
 using NexoraRent.Infrastructure.Users;
@@ -46,6 +48,8 @@ public static class DependencyInjection
         services.AddScoped<IAdminReviewRepository, AdminReviewRepository>();
         services.AddScoped<IPricingRepository, PricingRepository>();
         services.AddScoped<ILoyaltyRepository, LoyaltyRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationSender, NotificationSender>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }

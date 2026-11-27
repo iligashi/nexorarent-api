@@ -64,3 +64,9 @@ INSERT INTO loyalty_transactions (id, account_id, reservation_id, type, points, 
   ('dddddddd-0000-4000-8000-000000000103', 'dddddddd-0000-4000-8000-000000000101', NULL, 'adjust', 30, 'Welcome bonus', '2025-03-13 12:00:00');
 INSERT INTO loyalty_rewards (id, name, description, type, value, points_cost, is_active, min_tier) VALUES
   ('dddddddd-0000-4000-8000-000000000104', 'Parity free day', NULL, 'free_day', 1.00, 900, false, 'gold');
+
+-- Notification log rows for the /admin/notifications parity tests: one linked to a booking and
+-- its customer, one failed with no booking.
+INSERT INTO notification_log (id, reservation_id, user_id, type, channel, recipient, status, error_message, sent_at, created_at) VALUES
+  ('dddddddd-0000-4000-8000-000000000201', 'dddddddd-0000-4000-8000-0000000000e3', 'dddddddd-0000-4000-8000-000000000001', 'review_request', 'whatsapp', '+38344000001', 'sent', NULL, '2025-03-13 09:00:00', '2025-03-13 09:00:00'),
+  ('dddddddd-0000-4000-8000-000000000202', NULL, NULL, 'pickup_reminder', 'whatsapp', '+38344000002', 'failed', 'Parity failure', NULL, '2025-03-14 09:00:00');
