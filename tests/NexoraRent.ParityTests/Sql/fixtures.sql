@@ -70,3 +70,15 @@ INSERT INTO loyalty_rewards (id, name, description, type, value, points_cost, is
 INSERT INTO notification_log (id, reservation_id, user_id, type, channel, recipient, status, error_message, sent_at, created_at) VALUES
   ('dddddddd-0000-4000-8000-000000000201', 'dddddddd-0000-4000-8000-0000000000e3', 'dddddddd-0000-4000-8000-000000000001', 'review_request', 'whatsapp', '+38344000001', 'sent', NULL, '2025-03-13 09:00:00', '2025-03-13 09:00:00'),
   ('dddddddd-0000-4000-8000-000000000202', NULL, NULL, 'pickup_reminder', 'whatsapp', '+38344000002', 'failed', 'Parity failure', NULL, '2025-03-14 09:00:00');
+
+-- Expenses for the /admin/expenses parity tests, on the first available car (by slug), each on
+-- its own day: two in the last year, one older.
+INSERT INTO car_expenses (id, car_id, category, description, amount, expense_date, vendor, created_by)
+SELECT 'dddddddd-0000-4000-8000-000000000301', id, 'repair', 'Parity brakes', 240.50, '2026-09-15', 'Parity Garage', NULL
+FROM cars WHERE is_available = true ORDER BY slug LIMIT 1;
+INSERT INTO car_expenses (id, car_id, category, description, amount, expense_date, vendor, created_by)
+SELECT 'dddddddd-0000-4000-8000-000000000302', id, 'fuel', NULL, 61.20, '2026-10-02', NULL, NULL
+FROM cars WHERE is_available = true ORDER BY slug LIMIT 1;
+INSERT INTO car_expenses (id, car_id, category, description, amount, expense_date, vendor, created_by)
+SELECT 'dddddddd-0000-4000-8000-000000000303', id, 'insurance', 'Parity yearly', 480.00, '2024-01-20', 'Parity Insure', NULL
+FROM cars WHERE is_available = true ORDER BY slug LIMIT 1;

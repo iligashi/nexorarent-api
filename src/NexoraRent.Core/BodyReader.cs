@@ -14,6 +14,11 @@ namespace NexoraRent.Core;
 /// </summary>
 public sealed class BodyReader(JsonElement body)
 {
+    /// <summary>The largest value a <c>DECIMAL(10,2)</c> column holds.</summary>
+    public const decimal MaxMoney = 99_999_999.99m;
+
+    private const string MaxMoneyText = "99999999.99";
+
     public string? Error { get; private set; }
 
     /// <summary>JavaScript truthiness of <c>body[key]</c>, as in <c>if (!body.name)</c>.</summary>
@@ -75,16 +80,22 @@ public sealed class BodyReader(JsonElement body)
     /// </summary>
     public decimal PositiveDecimal(string key, decimal max)
     {
-        var number = Value(key) switch
-        {
-            { ValueKind: JsonValueKind.Number } value when value.TryGetDecimal(out var d) => d,
-            { ValueKind: JsonValueKind.String } value when decimal.TryParse(value.GetString(), NumberStyles.Number, CultureInfo.InvariantCulture, out var d) => d,
-            _ => (decimal?)null,
-        };
-
+        var number = DecimalValue(key);
         return number > 0 && number <= max
             ? Math.Round(number.Value, 2, MidpointRounding.AwayFromZero)
             : Fail<decimal>($"{key} must be a number above 0 and at most {max.ToString(CultureInfo.InvariantCulture)}");
+    }
+
+    /// <summary>
+    /// An amount for a <c>DECIMAL(10,2)</c> column that is not 0, rounded to cents (negative amounts,
+    /// such as refunds, are allowed). A numeric string is accepted too, as MySQL would.
+    /// </summary>
+    public decimal NonZeroMoney(string key)
+    {
+        var number = DecimalValue(key);
+        return number is { } value && value != 0 && Math.Abs(value) <= MaxMoney
+            ? Math.Round(value, 2, MidpointRounding.AwayFromZero)
+            : Fail<decimal>($"{key} must be a number other than 0, from -{MaxMoneyText} to {MaxMoneyText}");
     }
 
     /// <summary>A whole number from <paramref name="min"/> to <paramref name="max"/>; an integer string is accepted too.</summary>
@@ -133,6 +144,13 @@ public sealed class BodyReader(JsonElement body)
         Error ??= message;
         return default;
     }
+
+    private decimal? DecimalValue(string key) => Value(key) switch
+    {
+        { ValueKind: JsonValueKind.Number } value when value.TryGetDecimal(out var d) => d,
+        { ValueKind: JsonValueKind.String } value when decimal.TryParse(value.GetString(), NumberStyles.Number, CultureInfo.InvariantCulture, out var d) => d,
+        _ => null,
+    };
 
     private JsonElement? Value(string key) => body.TryGetProperty(key, out var value) ? value : null;
 

@@ -205,6 +205,23 @@ CREATE TABLE notification_log (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE car_expenses (
+  id CHAR(36) PRIMARY KEY,
+  car_id CHAR(36) NOT NULL,
+  category ENUM('insurance','repair','fuel','tire','wash','parking','tax','registration','other') NOT NULL,
+  description TEXT,
+  amount DECIMAL(10,2) NOT NULL,
+  expense_date DATE NOT NULL,
+  vendor VARCHAR(200),
+  created_by CHAR(36),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_expense_car (car_id),
+  INDEX idx_expense_date (expense_date),
+  INDEX idx_expense_category (category),
+  FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE reviews (
   id CHAR(36) PRIMARY KEY,
   user_id CHAR(36) NOT NULL,
