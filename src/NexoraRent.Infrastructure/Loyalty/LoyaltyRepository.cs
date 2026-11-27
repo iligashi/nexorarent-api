@@ -55,7 +55,7 @@ public sealed class LoyaltyRepository(MySqlConnectionFactory connections) : ILoy
         return new LoyaltyAccountDetail(account, [.. transactions]);
     }
 
-    public async Task<LoyaltyAccount?> AdjustPointsAsync(string id, PointsAdjustment adjustment, CancellationToken cancellationToken)
+    public async Task<PointsAdjustmentResult> AdjustPointsAsync(string id, PointsAdjustment adjustment, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(adjustment);
 
@@ -71,17 +71,18 @@ public sealed class LoyaltyRepository(MySqlConnectionFactory connections) : ILoy
             cancellationToken: cancellationToken));
         if (current is null)
         {
-            return null;
+            return new PointsAdjustmentResult(PointsAdjustmentStatus.NotFound);
         }
 
-        // `Math.max(0, balance + points)`; lifetime points only grow. NULL counts as 0, as in JS.
-        var balance = Math.Max(0L, (current.Balance ?? 0) + adjustment.Points);
-        var lifetime = adjustment.Points > 0 ? (current.Lifetime ?? 0) + adjustment.Points : current.Lifetime;
-        var tier = LoyaltyTiers.ForLifetimePoints(lifetime ?? 0);
+        // Leaving without a commit rolls the transaction back and releases the lock.
+        if (LoyaltyPoints.Apply(current.Balance, current.Lifetime, adjustment.Points) is not { } totals)
+        {
+            return new PointsAdjustmentResult(PointsAdjustmentStatus.TooLarge);
+        }
 
         await connection.ExecuteAsync(new CommandDefinition(
-            "UPDATE loyalty_accounts SET points_balance = @balance, lifetime_points = @lifetime, tier = @tier WHERE id = @id",
-            new { balance, lifetime, tier, id },
+            "UPDATE loyalty_accounts SET points_balance = @Balance, lifetime_points = @Lifetime, tier = @Tier WHERE id = @id",
+            new { totals.Balance, totals.Lifetime, totals.Tier, id },
             transaction,
             cancellationToken: cancellationToken));
         await connection.ExecuteAsync(new CommandDefinition(
@@ -96,7 +97,7 @@ public sealed class LoyaltyRepository(MySqlConnectionFactory connections) : ILoy
             transaction,
             cancellationToken: cancellationToken));
         await transaction.CommitAsync(cancellationToken);
-        return account;
+        return new PointsAdjustmentResult(PointsAdjustmentStatus.Saved, account);
     }
 
     public async Task<IReadOnlyList<LoyaltyReward>> ListRewardsAsync(CancellationToken cancellationToken)

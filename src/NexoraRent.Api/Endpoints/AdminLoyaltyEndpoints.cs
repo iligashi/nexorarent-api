@@ -52,9 +52,13 @@ internal static class AdminLoyaltyEndpoints
             return ErrorHandling.Error(StatusCodes.Status400BadRequest, error!);
         }
 
-        return await repository.AdjustPointsAsync(id, adjustment, cancellationToken) is { } account
-            ? Results.Ok(new { account })
-            : ErrorHandling.Error(StatusCodes.Status404NotFound, AccountNotFound);
+        var result = await repository.AdjustPointsAsync(id, adjustment, cancellationToken);
+        return result.Status switch
+        {
+            PointsAdjustmentStatus.NotFound => ErrorHandling.Error(StatusCodes.Status404NotFound, AccountNotFound),
+            PointsAdjustmentStatus.TooLarge => ErrorHandling.Error(StatusCodes.Status400BadRequest, "points would take the account past its limit"),
+            _ => Results.Ok(new { account = result.Account }),
+        };
     }
 
     private static async Task<IResult> ListRewardsAsync(ILoyaltyRepository repository, CancellationToken cancellationToken) =>
