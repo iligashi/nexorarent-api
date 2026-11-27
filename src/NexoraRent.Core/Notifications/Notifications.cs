@@ -55,6 +55,10 @@ public sealed record NotificationRequest(string Type, string Recipient, string? 
 public sealed record ReservationNotificationData
 {
     public required string ReservationNo { get; init; }
+
+    /// <summary>The registered customer, or null for a guest booking.</summary>
+    public string? UserId { get; init; }
+
     public string? CustomerName { get; init; }
     public string? GuestName { get; init; }
     public string? Brand { get; init; }

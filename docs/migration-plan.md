@@ -116,6 +116,7 @@ sends 18, so restart Express before running it twice in a row.
 | `PUT /admin/loyalty/rewards/:id` for a missing reward | 200 with `{}` | 404 "Reward not found" | Same as pricing rules |
 | A loyalty write with an unknown `type`/`min_tier`, a non-positive `value`/`points_cost`, or a description over the column size | MySQL rejects it and the answer is 500 | 400 with the field's message | A bad body is the client's error |
 | `POST /admin/notifications/send` with a `reservation_id` that does not exist | Fills the template without the booking, then the log row fails its foreign key: 500 | 404 "Reservation not found", nothing logged | The admin sees the booking id is wrong |
+| `POST /admin/notifications/send` for a booking | The log row has no `user_id`, so the log shows no customer name for it | The booking's customer is logged | The log says who was messaged |
 | `POST /admin/notifications/send` with a non-text `type` or `recipient` | `recipient.replace` throws: 500 (a numeric `type` found no template: 200 `success: false`) | 400 "… must be text …" | A bad body is the client's error |
 | `PUT /admin/notifications/templates/:id` for a missing template, or with `template_body` empty or null | 200 with `{}`, or MySQL rejects NULL: 500 | 404 "Template not found" / 400 | Same as the other admin groups; a blank template would send empty messages |
 | `GET /admin/notifications/log` `page`/`limit` | Unbounded; a non-number makes the query fail | Page at least 1, limit clamped to 1–100 (default 30) | Same rule as the other admin lists |

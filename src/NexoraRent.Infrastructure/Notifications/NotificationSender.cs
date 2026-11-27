@@ -32,6 +32,8 @@ public sealed partial class NotificationSender(INotificationRepository repositor
 
         var message = WhatsAppMessage.Render(template, WhatsAppMessage.TemplateData(extraData, reservation));
         var link = WhatsAppMessage.Link(recipient, message);
+        // Express logs a manual send without a user, so the log showed no customer name for it.
+        userId ??= reservation?.UserId;
         var logId = await repository.LogSentAsync(type, recipient, reservationId, userId, cancellationToken);
 
         LogCreated(logger, type, reservationId, userId);
